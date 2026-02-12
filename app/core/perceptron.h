@@ -20,6 +20,8 @@ public:
 	virtual void setWeights(const Weights &w) = 0;
 };
 
+enum TypePreceptron { Threshold, Bias };
+
 class PerceptronThreshold : public IPerceptron
 {
 public:
