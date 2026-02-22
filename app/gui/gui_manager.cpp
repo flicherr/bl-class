@@ -116,38 +116,40 @@ void gui::Manager::set_appstate()
 {
 	_state = std::make_shared<AppState>();
 	{
-		std::vector<RegSample> data = dataset::load_from_file<RegSample>(
+		const std::vector<RegSample> data = dataset::load_from_file<RegSample>(
 									  "../scripts/regression/train.csv");
-		auto split = dataset::split(data);
+		auto [train, test] = dataset::split(data);
 
-		_state->reg_data.train = split.train;
-		_state->reg_data.test = split.test;
+		_state->reg_data.train = train;
+		_state->reg_data.test = test;
 
 		neurons::Regression model;
 		RegressionTrainer trainer;
-		trainer.train(model, split.train, 100);
+		trainer.train(model, train, 100);
 		_state->reg_data.history = trainer.history;
 	}
 	{
-		std::vector<ClSample> data = dataset::load_from_file<ClSample>(
+		const std::vector<ClSample> data = dataset::load_from_file<ClSample>(
 									"../scripts/classification/train.csv");
-		dataset::DatasetSplit<ClSample> split = dataset::split<ClSample>(data);
+		auto [train, test] = dataset::split<ClSample>(data);
 
-		_state->class_data.train = split.train;
-		_state->class_data.test = split.test;
+		_state->class_data.train = train;
+		_state->class_data.test = test;
 
 		ClassifierTrainer trainer;
-		std::unique_ptr<neurons::IClassifier> model = std::make_unique<neurons::ClassifierByThreshold>();
-		_state->class_data.type_class[neurons::Threshold] = neurons::TypeClassifier::Threshold;
+		std::unique_ptr<neurons::IClassifier> model =
+			std::make_unique<neurons::ClassifierByThreshold>();
+		_state->class_data.type_class[neurons::Threshold] =
+			neurons::TypeClassifier::Threshold;
 
-		trainer.train(*model, split.train, 100);
+		trainer.train(*model, train, 100);
 		_state->class_data.history[neurons::Threshold] = trainer.history;
 		model.release();
 
 		model = std::make_unique<neurons::ClassifierByBias>();
 		_state->class_data.type_class[neurons::Bias] = neurons::TypeClassifier::Bias;
 
-		trainer.train(*model, split.train, 100);
+		trainer.train(*model, train, 100);
 		_state->class_data.history[neurons::Bias] = trainer.history;
 
 		_state->class_data.current_weights[neurons::Threshold]
@@ -230,15 +232,15 @@ void gui::Manager::draw_canvas() const
 		ImU32 color;
 		for (const auto & [x1, x2, y] : _state->class_data.train) {
 			p = worldToScreen(x1, x2, canvas_pos, canvas_size);
-			color = (y == 1)  ? IM_COL32(255, 80, 80, 255)
-								: IM_COL32(80, 160, 255, 255);
+			color = (y == 1)  ? IM_COL32(255, 30, 30, 255)
+								: IM_COL32(40, 80, 255, 255);
 			draw_list->AddCircleFilled(p, 3.5f, color);
 		}
 		// test points
 		for (const auto & [x1, x2, y] : _state->class_data.test) {
 			p = worldToScreen(x1, x2, canvas_pos, canvas_size);
-			color = (y == 1)	? IM_COL32(255, 80, 80, 255)
-								: IM_COL32(80, 160, 255, 255);
+			color = (y == 1)	? IM_COL32(255, 140, 140, 255)
+								: IM_COL32(140, 160, 255, 255);
 			draw_list->AddCircleFilled(p, 3.5f, color);
 		}
 	}
@@ -318,8 +320,8 @@ void gui::Manager::draw_toolbar() const
 	ImGui::BeginGroup();
 	const char *items[] = {
 		"Regression",
-		"Classification (t)",
 		"Classification (w0)",
+		"Classification (t)",
 	};
 
 	int idx = _state->currentShownData;
@@ -327,7 +329,6 @@ void gui::Manager::draw_toolbar() const
 		_state->currentShownData = static_cast<AppState::CurrentShownData>(idx);
 		_state->iteration = 0;
 		_state->isPlaying = false;
-		_state->lastUpdateTime = 0.0;
 	}
 	ImGui::EndGroup();
 
@@ -335,7 +336,9 @@ void gui::Manager::draw_toolbar() const
 	if (!_state->currentShownData) {
 		iterations = _state->reg_data.history.size();
 	} else {
-		iterations = _state->class_data.history.size();
+		iterations = _state->class_data.history[
+			_state->currentShownData == AppState::ClassificationThreshold
+			? neurons::Threshold : neurons::Bias].size();
 	}
 	ImGui::SliderInt("Iteration", &_state->iteration, 0, iterations - 1);
 	ImGui::SliderFloat("Speed (iters/sec)", &_state->playSpeed, 0.1f, 10.0f);
@@ -380,7 +383,7 @@ void gui::Manager::draw_toolbar() const
 		if (const double currentTime = glfwGetTime();
 			currentTime - _state->lastUpdateTime >= 1.0 / _state->playSpeed) {
 			_state->iteration++;
-			if (_state->iteration >= _state->iteration) {
+			if (_state->iteration >= iterations) {
 				_state->iteration = iterations - 1;
 				_state->isPlaying = false;
 			}
