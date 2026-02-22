@@ -56,11 +56,11 @@ std::vector<RegSample> dataset::load_from_file(const std::string &path)
     std::vector<RegSample> data;
     std::string line;
 
-    if (!std::getline(file, line))
+    if (!std::getline(file, line)) {
         throw std::runtime_error("Empty CSV file");
+    }
 
-    while (std::getline(file, line))
-    {
+    while (std::getline(file, line)) {
         std::stringstream ss(line);
         std::string token;
         RegSample s{};
