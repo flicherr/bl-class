@@ -10,8 +10,8 @@ void neurons::ClassifierByThreshold::update(double x1, double x2, int y)
     if (int y_hat = predict(x1, x2); y_hat!= y) {
         // w1 += lr * y * x1;
         // w2 += lr * y * x2;
-        w1 = lr * (y - y_hat) * x1;
-        w2 = lr * (y - y_hat) * x2;
+        w1 += lr * (y - y_hat) * x1;
+        w2 += lr * (y - y_hat) * x2;
     }
 }
 
