@@ -24,8 +24,8 @@ private:
 
     void set_appstate();
 
-    void draw_canvas();
-    void draw_toolbar();
+    void draw_canvas() const;
+    void draw_toolbar() const;
 
     ImVec2 worldToScreen(
         double x, double y, ImVec2 origin, ImVec2 size) const;

@@ -1,6 +1,7 @@
 #ifndef APPSTATE_H
 #define APPSTATE_H
 
+#include <array>
 #include <vector>
 #include <imgui.h>
 #include "neurons/neurons.h"
@@ -8,11 +9,12 @@
 
 struct ClassifierData
 {
-    neurons::TypeClassifier type_preceptron;
+    std::array<neurons::TypeClassifier, 2> type_class
+        = { neurons::Threshold, neurons::Bias };
     std::vector<ClSample> train;
     std::vector<ClSample> test;
-    std::vector<ClWeights> history;
-    ClWeights current_weights{0, 1, 0};
+    std::array<std::vector<ClWeights>, 2> history;
+    std::array<ClWeights, 2> current_weights;
 };
 
 struct RegressionData
@@ -41,8 +43,8 @@ struct AppState
 
     enum CurrentShownData {
         Regression,
-        ClassificationThreshold,
         ClassificationBias,
+        ClassificationThreshold,
     };
     CurrentShownData currentShownData = Regression;
 };
